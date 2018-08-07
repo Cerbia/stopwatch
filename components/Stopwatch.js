@@ -1,85 +1,111 @@
-/*Dodatkowym zadaniem dla chętnych będzie dopisanie metod, które będą:
+import React from 'react';
+import { render } from 'react-dom';
 
-zaznaczała wynik i przekazywała go do listy czasów,
-resetowała listę czasów.
-Dla wykonanych zadań dodatkowych stwórz też odpowiednie przyciski na stronie, które będą uruchamiały poszczególne funkcjonalności.
-*/
-class Stopwatch {
-    //display to miejsce w dokumencie
-    constructor(display, results) {
-        this.running = false;
-        this.display = display;
-        this.results = results;
-        this.reset();
-        this.print(this.times);
+class Stopwatch extends React.Component {
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      running: false,
+      results: [],
+      times: {
+        milliseconds: 0,
+        seconds: 0,
+        minutes: 0,
+      },
+    };
+  }
+
+  start() {
+    if (!this.state.running) {
+      this.setState({
+        running: true,
+      });
+      this.watch = setInterval(() => this.calculate(), 10);
     }
+  }
 
-    start(){
-        if(!this.running) {
-            this.running = true;
-            this.watch = setInterval(() => this.step(), 10);
-        }
-    }
-
-    step() {
-        if (!this.running) {
-            return;
-        } 
-        this.calculate();
-        this.print();
-    }
-
-    calculate() {
-        this.times.miliseconds += 1;
-        if (this.times.miliseconds >= 100) {
-            this.times.seconds += 1;
-            this.times.miliseconds = 0;
-        }
-        if (this.times.seconds >= 60) {
-            this.times.minutes += 1;
-            this.times.seconds = 0;
-        }
-    }
-
-    stop() {
-        this.running = false;
-        clearInterval(this.watch);
-    }
-
-
-    reset() {
-        this.times = {
-            minutes: 0,
+  calculate() {
+    this.setState((prevState) => {
+      if (prevState.times.seconds >= 60) {
+        return {
+          times: {
             seconds: 0,
-            miliseconds: 0
-        }
+            milliseconds: prevState.times.milliseconds,
+            minutes: prevState.times.minutes,
+          },
+        };
+      }
+
+      if (prevState.times.milliseconds >= 100) {
+        return {
+          times: {
+            seconds: prevState.times.seconds + 1,
+            milliseconds: 0,
+            minutes: prevState.times.minutes,
+          },
+        };
+      }
+
+      return {
+        times: {
+          milliseconds: prevState.times.milliseconds + 1,
+          seconds: prevState.times.seconds,
+          minutes: prevState.times.minutes,
+        },
+      };
+    });
+
+  }
+
+  stop() {
+    this.setState({
+      running: false,
+    });
+    clearInterval(this.watch);
+  }
+
+  reset() {
+    this.setState({
+      times: {
+        minutes: 0,
+        seconds: 0,
+        milliseconds: 0,
+      },
+    });
+  }
+
+  addResult() {
+    const result = this.state.results;
+
+    this.setState({
+      results: result.concat([ this.state.times ]),
+    });
+  }
+
+  format(times) {
+    return `${this.pad0(times.minutes)}:${this.pad0(times.seconds)}:${this.pad0(Math.floor(times.milliseconds))}`;
+  }
+
+  pad0(value) {
+    let result = value.toString();
+    if (result.length < 2) {
+      result = '0' + result;
     }
+    return result;
+  }
 
-    print() {
-        this.display.innerText = this.format(this.times);
-    }
-
-    format(times) {
-        return `${this.pad0(times.minutes)}:${this.pad0(times.seconds)}:${this.pad0(Math.floor(times.miliseconds))}`;
-    }
-
-    pad0(value) {
-        let result = value.toString();
-        if (result.length < 2) {
-            result = '0' + result;
-        }
-        return result;
-    }
-
-    addResult() {
-        var li = document.createElement("li");
-        li.appendChild(document.createTextNode(this.format(this.times)));
-        this.results.appendChild(li);
-    }
-
-    cleanResults() {
-        this.results.innerHTML = '';
-
-    }
-
+  render() {
+    return (
+      <div>
+        <button onClick={() => this.start()}>Start</button>
+        <button onClick={() => this.stop()}>Stop</button>
+        <button onClick={() => this.reset()}>Reset</button>
+        <button onClick={() => this.addResult()}>Add result</button>
+        {this.format(this.state.times)}
+        {this.state.results.map(result => <p>{JSON.stringify(result)}</p>)}
+      </div>);
+  }
 }
+
+export default Stopwatch;
